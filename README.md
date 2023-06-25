@@ -1,4 +1,4 @@
-# Medical_Insurance_Project
+# Medical Insurance EDA Project
 
 ## Closed Claims, 2019-2022
 
