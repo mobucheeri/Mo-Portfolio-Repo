@@ -1,14 +1,6 @@
 # Medical_Insurance_Project
----
-title: "Medical Insurance Closed Claims 2019-2022"
-author: "Mohamed B"
-date: "2023-06-25"
-output:
-  md_document
-    variant: markdown_github
----
 
-# Closed Claims, 2019-2022
+## Closed Claims, 2019-2022
 
 ```{r echo=FALSE, warning=FALSE, results='hide', message=FALSE}
 
@@ -34,7 +26,7 @@ library(shiny)
 
 setwd('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets')
 
-# Cleaned Closed Claim Dataset 2019-2022
+### Cleaned Closed Claim Dataset 2019-2022
 ClosedClaim_2019 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2019.xlsx')
 ClosedClaim_2020 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2020.xlsx')
 ClosedClaim_2021 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2021.xlsx')
@@ -118,7 +110,7 @@ colnames(ClosedClaim)[40]<-"length_of_stay"
 head(ClosedClaim)%>%kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2022 Raw Data', position = "center")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
 
-## Data Cleaning
+### Data Cleaning
 
 ```{r Data Cleaning, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -126,7 +118,7 @@ head(ClosedClaim)%>%kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2022 Raw
 
 Variables_grouped<-ClosedClaim%>%select("ind", "group_id", "group_id_description", "workplace_type", "provider", "provider_name", "type", "network", "doctor_name", "underwriting_year", "age", "age_band", "gender", "nationality", "categ", "subcateg_id", "subcateg_desc", "visa_type", "visa_type_description", "admission_month", "admission_year", "relation", "service", "service_description", "length_of_stay","mcn_nbr", "ssnbr_visanbr", "cov_risknet")
 
-# N/A's
+#### N/A's
 
 Variables_grouped$length_of_stay<- as.numeric(Variables_grouped$length_of_stay)
 
@@ -139,20 +131,20 @@ Variables_grouped$length_of_stay <- replace(Variables_grouped$length_of_stay, is
 
 Variables_grouped$`doctor_name` <- str_replace(Variables_grouped$`doctor_name`, "NOT X AVAILABLE", "Unknown")
 
-# Age Band
+#### Age Band
 
 Variables_grouped$`age_band`<- cut(Variables_grouped$age,breaks = c(0,5,18,19,30,35,40,45,50,55,60,65,70,80,90),right = F)
 Variables_grouped$`age_band`<-as.character(Variables_grouped$`age_band`)
 
-# Relation
+#### Relation
 
 Variables_grouped$`relation`<- ifelse(ClosedClaim$principal > ClosedClaim$ind, "Principal", ifelse(ClosedClaim$principal < ClosedClaim$ind, "Family Member", "Principal"))
 
-# Nationality
+#### Nationality
 
 Variables_grouped$nationality<- ifelse(Variables_grouped$nationality=="UNSPECIFIED", "NON-BAHRAINI",ifelse(Variables_grouped$nationality=="BAHRAIN","BAHRAINI","NON-BAHRAINI"))
 
-# DRC and Subcateg
+#### DRC and Subcateg
 
 Variables_grouped<- Variables_grouped%>%mutate(benefit= `subcateg_desc`)
 Variables_grouped[grepl("515",ClosedClaim$drc)|
@@ -164,7 +156,7 @@ Variables_grouped[grepl("515",ClosedClaim$drc)|
 Variables_grouped$pre_existing_indicator<- "NonPreExisting"
 Variables_grouped$pre_existing_indicator[grepl("664",ClosedClaim$drc)]<- "PreExisting"
 
-# Claim Count and Service Count
+#### Claim Count and Service Count
 
 Variables_grouped<- Variables_grouped%>%group_by(ssnbr_visanbr)%>%mutate(service_count=1)%>%ungroup()
 
@@ -172,14 +164,14 @@ Variables_grouped<- Variables_grouped%>%group_by(`mcn_nbr`)%>%mutate(claim_count
 
 Variables_grouped$claim_count[Variables_grouped$claim_count>1]<-0  
 
-# Variables Grouped Cleaned
+#### Variables Grouped Cleaned
 
 head(Variables_grouped)%>%kable(caption = "Table 2: Cleaned Data Closed Claims 2019-2022")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
 
-## Predictor Variables
+### Predictor Variables
 
-### Table of Final Predictor Variables
+#### Table of Final Predictor Variables
 
 ```{r Predictor Variables, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -200,15 +192,14 @@ head(Variables_summary)%>%kable(caption = "Table 3: Predictor Variables")%>%kabl
 
 ```
 
-## Exploratory Data Analysis
+### Exploratory Data Analysis
 
-### Gross Claim Analysis
-
-##### Each table in the Gross Claim Analysis shows the Gross Claim per Predictor Variable per year (2019-2022)
+##### Gross Claim Analysis
+###### Each table in the Gross Claim Analysis shows the Gross Claim per Predictor Variable per year (2019-2022)
 
 ```{r Gross Claim Analysis, warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
 
-# Gross Claim per Variable, 2019-2022
+#### Gross Claim per Variable, 2019-2022
 
 var<- c("group_id_description", "workplace_type", "provider_name", "type", "network", "doctor_name", "underwriting_year", "age", "age_band", "gender", "nationality", "categ", "benefit", "pre_existing_indicator",  "visa_type_description", "relation", "length_of_stay")
 
@@ -224,69 +215,68 @@ for(i in var){
   print(knitr::kable(a)%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey"))
 }
 
-### Histogram of Gross Claim, 2019-2022
+#### Histogram of Gross Claim, 2019-2022
 
 Variables_summary%>%ggplot(aes(x=grossclaim,fill=as.factor(admission_year)))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(x = "Gross Claim", title = "Gross Claim 2019-2022")+scale_fill_discrete(name = "Admission Year")
 
-### Boxplot of Gross Claim by Provider Network, 2019-2022
+#### Boxplot of Gross Claim by Provider Network, 2019-2022
 
 Variables_summary%>%group_by_("provider_name", "admission_year", "network")%>%summarise(grossclaim=sum(grossclaim))%>%ggplot(aes(x=network, y=grossclaim, fill=network, color=network))+geom_boxplot(alpha=0.5)+labs(x = "Network", y = "Gross Claim", title = "Log Scaled Boxplot for Gross Claim by Provider Network, 2019-2022")+facet_wrap("admission_year", scales = "free_y")+scale_y_log10()
 
-### Histogram of Gross Claim by Nationality, 2019-2022
+#### Histogram of Gross Claim by Nationality, 2019-2022
 
 Variables_summary%>%ggplot(aes(x=grossclaim,fill=nationality))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(x = "Gross Claim", title = "Gross Claim by Nationality, 2019-2022")+scale_fill_discrete(name = "Nationality")+facet_wrap("admission_year")
 
-### Histogram of In and Out Patient Gross Claim, 2019-2022
+#### Histogram of In and Out Patient Gross Claim, 2019-2022
 
 Variables_summary%>%filter(categ=="In-Patient")%>%ggplot(aes(x=grossclaim,fill=as.factor(admission_year)))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(title = "In-Patient Gross Claim, 2019-2022", x = "Gross Claim")
 
 Variables_summary%>%filter(categ=="Out-patient")%>%ggplot(aes(x=grossclaim,fill=as.factor(admission_year)))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(title = "Out-Patient Gross Claim, 2019-2022", x = "Gross Claim")
 
-### Q-Q Plot Comparing Normal Distribution of Gross Claim and In-Patient/        ### Out-Patient Claims, 2019-2022
+#### Q-Q Plot Comparing Normal Distribution of Gross Claim and In-Patient/        ### Out-Patient Claims, 2019-2022
 
 Variables_summary%>%group_by_("categ", "admission_year", "ind")%>%summarise(grossclaim=sum(grossclaim))%>%ggplot(aes(sample = grossclaim, color = categ))+stat_qq()+stat_qq_line()+facet_wrap("admission_year")+labs(title = "Normally Distributed Q-Q Plot on Gross Claim and In-Patient/Out-Patient Claims", x= "z-scores", y = "Claim Count")
 
-### Distribution of Gross Claim, by Age, 2019-2022
+#### Distribution of Gross Claim, by Age, 2019-2022
 
 Variables_summary%>%ggplot(aes(x=age, y=grossclaim, color = admission_year))+geom_col(alpha=0.5)+scale_y_log10()+labs(x = "Age", y="Gross Claim", title = "Gross Claim by Age, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 
-### Distribution of Gross Claim, by Gender, 2019-2022
+#### Distribution of Gross Claim, by Gender, 2019-2022
 
 Variables_summary%>%ggplot(aes(x=grossclaim,fill=gender))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(x = "Gross Claim", title = "Gross Claim by Gender, 2019-2022")+scale_fill_discrete(name = "Gender")+facet_wrap("admission_year", scales = "free_y")
 
-### Scatter Plot of Gross Claim and Age by Gender, 2019-2022
+#### Scatter Plot of Gross Claim and Age by Gender, 2019-2022
 
 Variables_summary%>%group_by_("gender", "admission_year", "age")%>%summarise(grossclaim=sum(grossclaim))%>%ggplot(aes(x=age, y=grossclaim, color=gender, fill=gender))+geom_point()+geom_smooth()+labs(x = "Age", y = "Gross Claim", title = "Gross Claim and Age by Gender, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 
-### Distribution of Gross Claim by Relation, 2019-2022
+#### Distribution of Gross Claim by Relation, 2019-2022
 
 Variables_summary%>%ggplot(aes(x=grossclaim,fill=relation))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(x = "Gross Claim", title = "Gross Claim by Relation, 2019-2022")+scale_fill_discrete(name = "Relation")+facet_wrap("admission_year", scales = "free_y")
 
-### Scatter Plot of Gross Claim and Age by Relation, 2019-2022
+#### Scatter Plot of Gross Claim and Age by Relation, 2019-2022
 
 Variables_summary%>%group_by_("relation", "admission_year", "age")%>%summarise(grossclaim=sum(grossclaim))%>%ggplot(aes(x=age, y=grossclaim, color=relation, fill=relation))+geom_point()+geom_smooth()+labs(x = "Age", y = "Gross Claim", title = "Gross Claim and Age by Relation, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 
-### Scatter Plot of Gross Claim and Age by Pre-Existing Indicator, 2019-2022
+#### Scatter Plot of Gross Claim and Age by Pre-Existing Indicator, 2019-2022
 
 Variables_summary%>%group_by_("pre_existing_indicator", "admission_year", "age")%>%summarise(grossclaim=sum(grossclaim))%>%ggplot(aes(x=age, y=grossclaim, color=pre_existing_indicator, fill=pre_existing_indicator))+geom_point()+geom_smooth()+labs(x = "Age", y = "Gross Claim", title = "Gross Claim and Age by Pre-Existing Indicator, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 
-### Line Graph of Gross Claim and Benefit by Age, 2019-2022
+#### Line Graph of Gross Claim and Benefit by Age, 2019-2022
 
 Variables_summary%>%group_by_("benefit", "admission_year", "age")%>%summarise(grossclaim=sum(grossclaim))%>%ggplot(aes(x=age, y=grossclaim, color=benefit, fill=benefit))+geom_line(alpha=0.15)+geom_smooth()+labs(x = "Age", y = "Gross Claim", title = "Gross Claim and Age by Benefit, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 
-### Scatter Plot of Gross Claim by Length of Stay, 2019-2022 
+#### Scatter Plot of Gross Claim by Length of Stay, 2019-2022 
 
 Variables_summary%>%group_by_("length_of_stay", "admission_year", "categ")%>%summarise(grossclaim=sum(grossclaim))%>%arrange(admission_year)%>%ggplot(aes(x=length_of_stay,y=grossclaim,color=admission_year))+geom_point()+facet_wrap("admission_year", scales = "free_y")+labs(title = "Gross Claim by Length of Stay, 2019-2022", color = "Admission Year")+geom_smooth()
 
 ```
 
-### Claim Count Analysis
-
+#### Claim Count Analysis
 ##### Each table in the Claim Count Analysis is the Claim Count per Predictor Variable (where applicable) per year (2019-2022)
 
 ```{r Claim Count Analysis, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-# Claim Count
+#### Claim Count
 
 for(i in var){
   b<-Variables_summary%>%group_by_(i,"admission_year")%>%summarise(claimcount=sum(claimcount))
@@ -305,13 +295,13 @@ Variables_summary%>%ggplot(aes(x=claimcount,fill=gender))+geom_histogram(alpha=0
 Variables_summary%>%group_by_("pre_existing_indicator", "admission_year", "age")%>%summarise(claimcount=sum(claimcount))%>%ggplot(aes(x=age, y=claimcount, color=pre_existing_indicator, fill=pre_existing_indicator))+geom_point()+geom_smooth()+labs(x = "Age", y = "Claim Count", title = "Claim Count and Pre-Existing Indicator by Age, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 ```
 
-### Severity of Claims Analysis
+#### Severity of Claims Analysis
 
 ##### Each table in the Severity Analysis is the Severity of the Claims per Predictor Variable per year (2019-2022)
 
 ```{r Severity Analysis, echo=FALSE, warning=FALSE, results='asis', message=FALSE}
 
-# Severity of Claims per Variable, 2019-2022
+#### Severity of Claims per Variable, 2019-2022
 
 for(i in var){
   c<-Variables_summary%>%group_by_(i,"admission_year")%>%summarise(severity=sum(grossclaim)/sum(claimcount))
@@ -325,64 +315,60 @@ for(i in var){
   print(knitr::kable(c)%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey"))
 }
 
-### Histogram of Severity (log scaled), 2019-2022
+#### Histogram of Severity (log scaled), 2019-2022
 
 Variables_summary%>%ggplot(aes(x=severity,fill=as.factor(admission_year)))+geom_histogram(alpha=0.5)+scale_y_log10()+labs(x = "Severity", title = "Severity 2019-2022")+scale_fill_discrete(name = "Admission Year")
 
-### Histogram of Severity of Claim in In and Out Patient (log scaled), 2019-2022
+#### Histogram of Severity of Claim in In and Out Patient (log scaled), 2019-2022
 
 Variables_summary%>%filter(categ=="In-Patient")%>%ggplot(aes(x=severity,fill=as.factor(admission_year)))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(title = "In-Patient Severity, 2019-2022", x = "Severity")+scale_fill_discrete(name = "Admission Year")
 
 Variables_summary%>%filter(categ=="Out-patient")%>%ggplot(aes(x=severity,fill=as.factor(admission_year)))+geom_histogram(alpha=0.5)+scale_x_log10()+labs(title = "Out-Patient Severity, 2019-2022", x = "Severity")+scale_fill_discrete(name = "Admission Year")
 
-### Q-Q Plot Comparing Normal Distribution of Severity by In-Patient/Out-Patient ### Claims, 2019-2022
+#### Q-Q Plot Comparing Normal Distribution of Severity by In-Patient/Out-Patient ### Claims, 2019-2022
 
 Variables_summary%>%group_by_("categ", "admission_year", "ind")%>%summarise(severity=sum(grossclaim)/sum(claimcount))%>%ggplot(aes(sample = severity, color = categ))+stat_qq()+stat_qq_line()+facet_wrap("admission_year")+labs(title = "Normally Distributed Q-Q Plot on Severity and In-Patient/Out-Patient Claims", x = "z-scores", y = "Severity", color = "Category")
 
-### Line Graph Comparing In-Patient Percentage per Network, 2019-2022
+#### Line Graph Comparing In-Patient Percentage per Network, 2019-2022
 
 Variables_summary%>%group_by(`admission_year`, `network`)%>%summarise(total = n(), percent_in_patient = mean(`categ` == "In-Patient"))%>%arrange(desc(percent_in_patient))%>%filter(network %in% c("Silver", "Gold", "Diamond", "Platinum", "Restricted"))%>%ungroup()%>%ggplot(aes(x=admission_year,y=percent_in_patient, color = network))+geom_point()+geom_smooth()+labs(title = "In-Patient Percentage per Nework, 2019-2022", x = "Admission Year", y = "Percentage of In-Patient Intake")
 
-### Histogram of Severity of Claim by Gender (log scaled), 2019-2022
+#### Histogram of Severity of Claim by Gender (log scaled), 2019-2022
 
 Variables_summary%>%ggplot(aes(x=severity,fill=gender))+geom_histogram(alpha=0.5)+scale_y_log10()+labs(x = "Severity", title = "Severity by Gender, 2019-2022")+scale_fill_discrete(name = "Gender")+facet_wrap("admission_year")
 
-### Column Chart of Distribution of Severity (log scaled) by Age and Gender, 2019-2022
+#### Column Chart of Distribution of Severity (log scaled) by Age and Gender, 2019-2022
 
 Variables_summary%>%ggplot(aes(x=age,y=severity,fill=gender))+geom_col(alpha=0.5)+scale_y_log10()+labs(x = "Age", y="Severity", title = "Severity by Age and Gender, 2019-2022")+scale_fill_discrete(name = "Gender")+facet_wrap("admission_year")
 
-### Q-Q Plot Comparing Normal Distribution of Severity by Gender, 2019-2022
+#### Q-Q Plot Comparing Normal Distribution of Severity by Gender, 2019-2022
 
 Variables_summary%>%group_by_("gender", "admission_year", "ind")%>%summarise(severity=sum(grossclaim)/sum(claimcount))%>%ggplot(aes(sample = severity, color = gender))+stat_qq()+stat_qq_line()+facet_wrap("admission_year", scales = "free_y")+labs(title = "Normally Distributed Q-Q Plot on Severity by Gender", x = "z-scores", y = "Severity", color = "Gender")
 
-### Distribution of Severity by Nationality (log scaled), 2019-2022
+#### Distribution of Severity by Nationality (log scaled), 2019-2022
 
 Variables_summary%>%ggplot(aes(x=severity,fill=nationality))+geom_histogram(alpha=0.5)+scale_y_log10()+labs(x = "Severity", title = "Severity by Nationality, 2019-2022")+scale_fill_discrete(name = "Nationality")+facet_wrap("admission_year", scales = "free_y")
 
-### Scatter plot of Severity of Claim by Length of Stay, 2019-2022
+#### Scatter plot of Severity of Claim by Length of Stay, 2019-2022
 
 Variables_summary%>%group_by_("length_of_stay", "admission_year", "categ")%>%summarise(severity=sum(grossclaim)/sum(claimcount))%>%arrange(admission_year)%>%ggplot(aes(x=length_of_stay,y=severity,color=admission_year))+geom_point()+facet_wrap("admission_year", scales = "free_y")+labs(title = "Severity of Claims by Length of Stay, 2019-2022", color = "Admission Year")+geom_smooth()
 
-### Scatter Plot of Severity of Claim and Pre-Existing Condition by Age, 2019-2022
+#### Scatter Plot of Severity of Claim and Pre-Existing Condition by Age, 2019-2022
 
 Variables_summary%>%group_by_("pre_existing_indicator", "admission_year", "age")%>%summarise(severity=sum(grossclaim)/sum(claimcount))%>%ggplot(aes(x=age, y=severity, color=pre_existing_indicator, fill=pre_existing_indicator))+geom_point(alpha=0.5)+geom_smooth()+labs(x = "Age", y = "Severity", title = "Severity of Claim by Pre-Existing Indicator and Age, 2019-2022")+facet_wrap("admission_year", scales = "free_y")
 
-### Area Graph of the Severity of Claim and Benefit by Age, 2019-2022
+#### Area Graph of the Severity of Claim and Benefit by Age, 2019-2022
 
 Variables_summary%>%group_by_("benefit", "admission_year", "age")%>%summarise(severity=sum(grossclaim)/sum(claimcount))%>%ggplot(aes(x=age, y=severity, color=benefit, fill=benefit))+geom_line(alpha=0.15)+geom_smooth()+labs(x = "Age", y = "Severity", title = "Severity of Claim by Benefit and Age, 2019-2022")+facet_wrap("admission_year", scales = "free_y")+scale_y_log10()
 
-### Scatter Plot of the Severity of Claim by Principal and Family Member, 2019-2022
+#### Scatter Plot of the Severity of Claim by Principal and Family Member, 2019-2022
 
 Variables_summary%>%group_by_("relation", "admission_year", "age")%>%summarise(severity=sum(grossclaim/sum(claimcount)))%>%ggplot(aes(x=age, y=severity, color=relation, fill=relation))+geom_point(alpha=0.5)+geom_smooth()+labs(x = "Age", y = "Severity", title = "Severity by Relation and Age, 2019-2022")+facet_wrap("admission_year")
 ```
 
-### Models
-
-#### Decision Tree Model
+#### Models: Decision Tree Model
 
 ```{r, echo=FALSE, warning=FALSE, results='hide', message=FALSE}
-
-### Decision Tree Model
 
 set.seed(123)
 sample_size = floor(0.8*nrow(Variables_summary))
