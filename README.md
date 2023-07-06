@@ -2,8 +2,7 @@
 
 ## Closed Claims, 2019-2022
 
-```{r echo=FALSE, warning=FALSE, results='hide', message=FALSE}
-
+library(coder)
 library(tidyverse)
 library(dplyr)
 library(lubridate)
@@ -22,22 +21,20 @@ library(randomForest)
 library(shiny)
 ```
 
+## Closed Claim Data set
+
 ```{r Closed Claim Raw Dataset, echo=FALSE, warning=FALSE, message=FALSE}
 
-setwd('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets')
+# Cleaned Closed Claim Dataset 2019-2022
 
-### Cleaned Closed Claim Dataset 2019-2022
-ClosedClaim_2019 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2019.xlsx')
-ClosedClaim_2020 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2020.xlsx')
-ClosedClaim_2021 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2021.xlsx')
-ClosedClaim_2022 <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Closed Claims 2019-2022/ClosedClaim_2022.xlsx')
-Provider_Network <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/Provider Network.xlsx')
-Production <- read_xlsx('/Users/mo/Desktop/Mo-Portfolio-Repo/Project 1 Datasets/GroupID.xlsx')
+ClosedClaim_2019 <- read_xlsx('C:/Users/au-trn01/OneDrive - BKIC BAHRAIN/Closed Claim GLOBMED/GLOBMED Files/Claim/ClosedClaim_2019.xlsx')
+ClosedClaim_2020 <- read_xlsx('C:/Users/au-trn01/OneDrive - BKIC BAHRAIN/Closed Claim GLOBMED/GLOBMED Files/Claim/ClosedClaim_2020.xlsx')
+ClosedClaim_2021 <- read_xlsx('C:/Users/au-trn01/OneDrive - BKIC BAHRAIN/Closed Claim GLOBMED/GLOBMED Files/Claim/ClosedClaim_2021.xlsx')
+ClosedClaim_2022 <- read_xlsx('C:/Users/au-trn01/OneDrive - BKIC BAHRAIN/Closed Claim GLOBMED/GLOBMED Files/Claim/ClosedClaim_2022.xlsx')
+Provider_Network <- read_xlsx('C:/Users/au-trn01/OneDrive - BKIC BAHRAIN/Closed Claim GLOBMED/GLOBMED Files/Poduction Variables/Provider Network.xlsx')
+Production <- read_xlsx('C:/Users/au-trn01/OneDrive - BKIC BAHRAIN/Closed Claim GLOBMED/GLOBMED Files/Poduction Variables/GroupID.xlsx')
 GroupID <- Production
 
-ClosedClaim_2020$BRANCH<- as.character(ClosedClaim_2020$BRANCH)
-ClosedClaim_2021$BRANCH<- as.character(ClosedClaim_2021$BRANCH)
-ClosedClaim_2022$BRANCH<- as.character(ClosedClaim_2022$BRANCH)
 
 ClosedClaim_2020$`BROKER NAME`<- as.character(ClosedClaim_2020$`BROKER NAME`)
 ClosedClaim_2021$`BROKER NAME`<- as.character(ClosedClaim_2021$`BROKER NAME`)
@@ -91,6 +88,13 @@ ClosedClaim_2019$`REFERENCE`<- as.character(ClosedClaim_2019$`REFERENCE`)
 ClosedClaim_2020$`REFERENCE`<- as.character(ClosedClaim_2020$`REFERENCE`)
 ClosedClaim_2022$`REFERENCE`<- as.character(ClosedClaim_2022$`REFERENCE`)
 
+
+ClosedClaim_2019$`BRANCH`<- as.character(ClosedClaim_2019$`BRANCH`)
+ClosedClaim_2020$`BRANCH`<- as.character(ClosedClaim_2020$`BRANCH`)
+ClosedClaim_2021$`BRANCH`<- as.character(ClosedClaim_2021$`BRANCH`)
+ClosedClaim_2022$`BRANCH`<- as.character(ClosedClaim_2022$`BRANCH`)
+
+
 ClosedClaim<- bind_rows(ClosedClaim_2019,
                         ClosedClaim_2020,
                         ClosedClaim_2021,
@@ -103,9 +107,11 @@ ClosedClaim$`GENDER`<-as.character(ClosedClaim$`GENDER`)
 rm(list=c("ClosedClaim_2019","ClosedClaim_2020","ClosedClaim_2021","ClosedClaim_2022", "Production"))
 
 ClosedClaim <- clean_names(ClosedClaim)
+
 ClosedClaim<- inner_join(x = Provider_Network, y = ClosedClaim, by = "provider")
 ClosedClaim<- inner_join(x = GroupID, y = ClosedClaim, by = "group_id")
 colnames(ClosedClaim)[40]<-"length_of_stay"
+
 
 head(ClosedClaim)%>%kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2022 Raw Data', position = "center")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
