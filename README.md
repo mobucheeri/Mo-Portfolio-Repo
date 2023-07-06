@@ -116,7 +116,7 @@ colnames(ClosedClaim)[40]<-"length_of_stay"
 head(ClosedClaim)%>%kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2022 Raw Data', position = "center")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
 
-### Data Cleaning
+## Data Cleaning
 
 ```{r Data Cleaning, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -124,7 +124,7 @@ head(ClosedClaim)%>%kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2022 Raw
 
 Variables_grouped<-ClosedClaim%>%select("ind", "group_id", "group_id_description", "workplace_type", "provider", "provider_name", "type", "network", "doctor_name", "underwriting_year", "age", "age_band", "gender", "nationality", "categ", "subcateg_id", "subcateg_desc", "visa_type", "visa_type_description", "admission_month", "admission_year", "relation", "service", "service_description", "length_of_stay","mcn_nbr", "ssnbr_visanbr", "cov_risknet")
 
-#### N/A's
+# N/A's
 
 Variables_grouped$length_of_stay<- as.numeric(Variables_grouped$length_of_stay)
 
@@ -137,20 +137,20 @@ Variables_grouped$length_of_stay <- replace(Variables_grouped$length_of_stay, is
 
 Variables_grouped$`doctor_name` <- str_replace(Variables_grouped$`doctor_name`, "NOT X AVAILABLE", "Unknown")
 
-#### Age Band
+# Age Band
 
 Variables_grouped$`age_band`<- cut(Variables_grouped$age,breaks = c(0,5,18,19,30,35,40,45,50,55,60,65,70,80,90),right = F)
 Variables_grouped$`age_band`<-as.character(Variables_grouped$`age_band`)
 
-#### Relation
+# Relation and Family Size
 
 Variables_grouped$`relation`<- ifelse(ClosedClaim$principal > ClosedClaim$ind, "Principal", ifelse(ClosedClaim$principal < ClosedClaim$ind, "Family Member", "Principal"))
 
-#### Nationality
+# Nationality
 
 Variables_grouped$nationality<- ifelse(Variables_grouped$nationality=="UNSPECIFIED", "NON-BAHRAINI",ifelse(Variables_grouped$nationality=="BAHRAIN","BAHRAINI","NON-BAHRAINI"))
 
-#### DRC and Subcateg
+# DRC and Subcateg
 
 Variables_grouped<- Variables_grouped%>%mutate(benefit= `subcateg_desc`)
 Variables_grouped[grepl("515",ClosedClaim$drc)|
@@ -162,7 +162,7 @@ Variables_grouped[grepl("515",ClosedClaim$drc)|
 Variables_grouped$pre_existing_indicator<- "NonPreExisting"
 Variables_grouped$pre_existing_indicator[grepl("664",ClosedClaim$drc)]<- "PreExisting"
 
-#### Claim Count and Service Count
+# Claim Count and Service Count
 
 Variables_grouped<- Variables_grouped%>%group_by(ssnbr_visanbr)%>%mutate(service_count=1)%>%ungroup()
 
@@ -170,11 +170,10 @@ Variables_grouped<- Variables_grouped%>%group_by(`mcn_nbr`)%>%mutate(claim_count
 
 Variables_grouped$claim_count[Variables_grouped$claim_count>1]<-0  
 
-#### Variables Grouped Cleaned
+# Variables Grouped Cleaned
 
 head(Variables_grouped)%>%kable(caption = "Table 2: Cleaned Data Closed Claims 2019-2022")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
-
 ### Predictor Variables
 
 #### Table of Final Predictor Variables
