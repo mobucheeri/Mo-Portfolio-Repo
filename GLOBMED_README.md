@@ -6,8 +6,13 @@ output:
   html_document:
     df_print: paged
 ---
+# 1. Project Overview
 
-# GLOBMED Closed Claims, 2019-2023
+This project analyses GLOBMED closed claims data from 2019 to 2023 to identify patterns in claim severity, frequency, and various demographic and medical variables. Using statistical techniques, this project provides strategic insights to enhance risk assessment and resource management in the medical insurance domain.
+
+# 2. Key Libraries
+
+This project employs a variety of R libraries to support data processing, analysis, and visualisation. Key libraries include:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
 
@@ -30,8 +35,12 @@ library(shiny)
 library(writexl)
 library(tinytex)
 ```
+# 3. Data Import and Cleaning
+Data from multiple years is imported, processed, and cleaned to ensure consistency. The data includes closed claims from 2019 to 2023, provider networks, and ICD-10 medical codes for disease classification. Key cleaning steps include:
 
-## Importing and Cleaning Data-sets
+- Converting column types for consistency.
+- Addressing missing data by assigning NA values to appropriate categories (e.g., “N/A” or “Unknown”).
+- Standardising demographic fields such as gender, nationality, and relation type for consistency.
 
 ```{r Closed Claim Raw Dataset, echo=TRUE, warning=FALSE, message=FALSE}
 
@@ -133,90 +142,118 @@ ClosedClaim<- inner_join(x = GroupID, y = ClosedClaim, by = "group_id")
 colnames(ClosedClaim)[40]<-"length_of_stay"
 ```
 
-## ICD Code Grouped
+# 4. ICD Code Grouped
+The ICD (International Classification of Diseases) codes are standardised identifiers for health conditions, enabling consistent classification of diseases. In this section, we map closed claim data to grouped ICD blocks, allowing for a more accessible analysis of claims by disease type. This process involves extracting a disease block code, replacing specific codes with "N/A," then joining it with a reference dataset to categorize the claims data.
 
+## Code Explanation
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
+# Step 1: Extract the ICD disease block from the first character of the 'disease' column
+ClosedClaim <- ClosedClaim %>% mutate(icd_disease_block = substr(ClosedClaim$disease, 1, 1))
 
-# Here is the code to join the Claims data with a condensed and grouped code of the ICD (International Classification of Diseases)
-
-ClosedClaim <- ClosedClaim%>%mutate(icd_disease_block = substr(ClosedClaim$disease,1,1))
-
+# Step 2: Replace specific values in 'icd_disease_block' with "N/A" for categories not needed
 ClosedClaim$icd_disease_block <- str_replace(ClosedClaim$icd_disease_block, "2", "N/A")
 ClosedClaim$icd_disease_block <- str_replace(ClosedClaim$icd_disease_block, "3", "N/A")
 ClosedClaim$icd_disease_block <- str_replace(ClosedClaim$icd_disease_block, "4", "N/A")
 ClosedClaim$icd_disease_block <- str_replace(ClosedClaim$icd_disease_block, "7", "N/A")
 ClosedClaim$icd_disease_block <- str_replace(ClosedClaim$icd_disease_block, "8", "N/A")
 
-ClosedClaim <- left_join(ClosedClaim,icd10_code, by = 'icd_disease_block')
+# Step 3: Join the 'ClosedClaim' data with 'icd10_code' to map grouped ICD descriptions
+ClosedClaim <- left_join(ClosedClaim, icd10_code, by = 'icd_disease_block')
 
-rm(list=c("Provider_Network", "GroupID", "icd10_code"))
+# Step 4: Remove unnecessary datasets to free memory
+rm(list = c("Provider_Network", "GroupID", "icd10_code"))
 
-head(ClosedClaim)%>%kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2023 Raw Data', position = "center")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
+# Step 5: Display the first few rows of the cleaned and merged 'ClosedClaim' data
+head(ClosedClaim) %>%
+  kable(caption = 'Table 1: GLOBMED Closed Claim 2019-2023 Raw Data', position = "center") %>%
+  kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), 
+                position = "left", font_size = 12, fixed_thead = T) %>%
+  column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
 
-## Data Cleaning
+# 5. Data Cleaning
+This section focuses on preparing the claims data for analysis by handling missing values, standardizing variable formats, and deriving valuable groupings. Data cleaning is essential to ensure accurate analysis and 
+interpretation.
 
 ```{r Data Cleaning, echo=TRUE, warning=FALSE, message=FALSE}
 
-# These are the grouped variables
+# Step 1: Selecting Relevant Variables
+# Selecting specific columns from the 'ClosedClaim' dataset to create 'Variables_grouped'
+Variables_grouped <- ClosedClaim %>% 
+  select("ind", "group_id", "group_id_description", "workplace_type", "provider", 
+         "provider_name", "type", "network", "doctor_name", "underwriting_year", 
+         "age", "age_band", "gender", "nationality", "categ", "chapter", 
+         "icd_disease_block", "start_of_block", "end_of_block", "icd_grouped", 
+         "icd_disease_description", "subcateg_id", "subcateg_desc", "visa_type", 
+         "visa_type_description", "admission_month", "admission_year", "relation", 
+         "service", "service_description", "length_of_stay", "mcn_nbr", 
+         "ssnbr_visanbr", "cov_risknet")
 
-Variables_grouped<-ClosedClaim%>%select("ind", "group_id", "group_id_description", "workplace_type", "provider", "provider_name", "type", "network", "doctor_name", "underwriting_year", "age", "age_band", "gender", "nationality", "categ","chapter","icd_disease_block","start_of_block","end_of_block","icd_grouped","icd_disease_description", "subcateg_id", "subcateg_desc", "visa_type", "visa_type_description", "admission_month", "admission_year", "relation", "service", "service_description", "length_of_stay","mcn_nbr", "ssnbr_visanbr", "cov_risknet")
-
-# N/A's
-
-Variables_grouped$length_of_stay<- as.numeric(Variables_grouped$length_of_stay)
-
+# Step 2: Handling Missing Values
+# Converting 'length_of_stay' to numeric and filling NA values in 'visa_type' and character fields
+Variables_grouped$length_of_stay <- as.numeric(Variables_grouped$length_of_stay)
 Variables_grouped$`visa_type` <- replace(Variables_grouped$`visa_type`, is.na(Variables_grouped$`visa_type`), "N/A")
-
-Variables_grouped <- Variables_grouped%>%
-  mutate_if(is.character, ~replace_na(., "Not Applicable"))
-
+Variables_grouped <- Variables_grouped %>% mutate_if(is.character, ~replace_na(., "Not Applicable"))
 Variables_grouped$length_of_stay <- replace(Variables_grouped$length_of_stay, is.na(Variables_grouped$length_of_stay), 0)
 
+# Replacing unavailable doctor names with 'Unknown'
 Variables_grouped$`doctor_name` <- str_replace(Variables_grouped$`doctor_name`, "NOT X AVAILABLE", "Unknown")
 
-# Age Band
+# Step 3: Creating Age Bands
+# Assigning age into categories (bands) for analysis
+Variables_grouped$`age_band` <- cut(Variables_grouped$age, breaks = c(0,5,18,19,30,35,40,45,50,55,60,65,70,80,90), right = F)
+Variables_grouped$`age_band` <- as.character(Variables_grouped$`age_band`)
 
-Variables_grouped$`age_band`<- cut(Variables_grouped$age,breaks = c(0,5,18,19,30,35,40,45,50,55,60,65,70,80,90),right = F)
-Variables_grouped$`age_band`<-as.character(Variables_grouped$`age_band`)
+# Step 4: Setting Relationship Type
+# Defining 'relation' based on the principal and individual claims
+Variables_grouped$`relation` <- ifelse(ClosedClaim$principal > ClosedClaim$ind, "Principal", 
+                                       ifelse(ClosedClaim$principal < ClosedClaim$ind, "Family Member", "Principal"))
 
-# Relation
+# Step 5: Categorizing Nationality
+# Assigning specified nationality groups
+Variables_grouped$nationality <- ifelse(Variables_grouped$nationality == "UNSPECIFIED", "NON-BAHRAINI",
+                                        ifelse(Variables_grouped$nationality == "BAHRAIN", "BAHRAINI", "NON-BAHRAINI"))
 
-Variables_grouped$`relation`<- ifelse(ClosedClaim$principal > ClosedClaim$ind, "Principal", ifelse(ClosedClaim$principal < ClosedClaim$ind, "Family Member", "Principal"))
+# Step 6: Identifying Maternity and Pre-Existing Conditions
+# Setting 'benefit' to 'Maternity' if the claim contains specific DRC codes, and assigning pre-existing indicators
+Variables_grouped <- Variables_grouped %>% mutate(benefit = `subcateg_desc`)
+Variables_grouped[grepl("515|516|517|518|527", ClosedClaim$drc), "benefit"] <- "Maternity"
+Variables_grouped$pre_existing_indicator <- "NonPreExisting"
+Variables_grouped$pre_existing_indicator[grepl("664", ClosedClaim$drc)] <- "PreExisting"
 
-# Nationality
+# Step 7: Calculating Service and Claim Counts
+# Grouping claims by 'ssnbr_visanbr' and counting services, then by 'mcn_nbr' for cumulative claim counts
+Variables_grouped <- Variables_grouped %>% group_by(ssnbr_visanbr) %>% mutate(service_count = 1) %>% ungroup()
+Variables_grouped <- Variables_grouped %>% group_by(`mcn_nbr`) %>% mutate(claim_count = cumsum(1:n())) %>% ungroup()
+Variables_grouped$claim_count[Variables_grouped$claim_count > 1] <- 0
 
-Variables_grouped$nationality<- ifelse(Variables_grouped$nationality=="UNSPECIFIED", "NON-BAHRAINI",ifelse(Variables_grouped$nationality=="BAHRAIN","BAHRAINI","NON-BAHRAINI"))
-
-# DRC and Subcateg
-
-Variables_grouped<- Variables_grouped%>%mutate(benefit= `subcateg_desc`)
-Variables_grouped[grepl("515",ClosedClaim$drc)|
-           grepl("516",ClosedClaim$drc)|
-           grepl("517",ClosedClaim$drc)|
-           grepl("518",ClosedClaim$drc)|
-           grepl("527",ClosedClaim$drc),"benefit"]<- "Maternity"
-
-Variables_grouped$pre_existing_indicator<- "NonPreExisting"
-Variables_grouped$pre_existing_indicator[grepl("664",ClosedClaim$drc)]<- "PreExisting"
-
-# Claim Count and Service Count
-
-Variables_grouped<- Variables_grouped%>%group_by(ssnbr_visanbr)%>%mutate(service_count=1)%>%ungroup()
-
-Variables_grouped<- Variables_grouped%>%group_by(`mcn_nbr`)%>%mutate(claim_count=cumsum(1:n()))%>%ungroup()
-
-Variables_grouped$claim_count[Variables_grouped$claim_count>1]<-0
-
+# Step 8: Removing Temporary Data
+# Cleaning up the environment by removing the original 'ClosedClaim' dataset
 rm(ClosedClaim)
 
-# Variables Grouped Cleaned
-
-head(Variables_grouped)%>%kable(caption = "Table 2: Cleaned Data Closed Claims 2019-2023")%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
-
+# Step 9: Displaying Cleaned Data
+# Displaying the first rows of the cleaned data
+head(Variables_grouped) %>%
+  kable(caption = "Table 2: Cleaned Data Closed Claims 2019-2023") %>%
+  kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), 
+                position = "left", font_size = 12, fixed_thead = T) %>%
+  column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey")
 ```
+## Summary of Steps:
+1. Selecting Variables: Only relevant columns are retained for analysis.
+2. Handling Missing Values: Missing values are replaced with relevant indicators, such as “N/A” or “Not Applicable.”
+3. Age Band Creation: The age_band variable categorizes age for segmented analysis.
+4. Relationship Assignment: Determines each claim's relation (Principal or Family Member).
+5. Nationality Grouping: Nationality is classified into defined categories.
+6. Maternity and Pre-Existing Conditions: Specific claim codes identify maternity benefits and pre-existing conditions.
+7. Claim and Service Counts: Counts services and claims to add to data granularity.
+8. Data Cleanup: Temporary data are removed to optimize memory.
+9. Data Display: A preview of the cleaned dataset is provided in a formatted table.
 
-## Predictor Variables
+This data-cleaning process transforms raw data into a structured format suitable for further analysis, ensuring consistency and usability for subsequent steps in the project.
+
 
 ```{r Predictor Variables, echo=TRUE, warning=FALSE, message=FALSE}
 
@@ -237,30 +274,53 @@ head(Variables_summary)%>%kable(caption = "Table 3: Predictor Variables")%>%kabl
 rm("Variables_grouped")
 ```
 
-## Exploratory Data Analysis
+# 6. Exploratory Data Analysis (EDA)
+This section of the analysis explores gross claim trends from 2019 to 2023. By examining the distribution, trends, and relationships within the dataset, we gain insights into factors influencing gross claim amounts.
 
-### Gross Claim Analysis
-
-##### Each table in the Gross Claim Analysis shows the Gross Claim per Predictor Variable per year (2019-2023)
-
+Key Analyses
+- Distribution Analysis: Visualizes the distribution of gross claims across demographic variables such as age and gender.
+- Trend Analysis: Line plots highlight gross claim trends across years.
+- Cross-Variable Comparisons: Examines relationships between variables such as age, gender, and length of stay.
+  
 ```{r Gross Claim Analysis, warning=FALSE, message=FALSE, echo=TRUE, results='asis'}
 
-# Gross Claim per Variable, 2019-2023
+# Gross Claim Analysis by Variable, 2019-2023
 
-var<- c("group_id_description", "workplace_type", "provider_name", "type", "network", "doctor_name", "underwriting_year", "age", "age_band", "gender", "icd_grouped", "icd_disease_description", "nationality", "categ", "benefit", "pre_existing_indicator",  "visa_type_description", "relation", "length_of_stay")
+var <- c("group_id_description", "workplace_type", "provider_name", "type", "network", "doctor_name", 
+         "underwriting_year", "age", "age_band", "gender", "icd_grouped", "icd_disease_description", 
+         "nationality", "categ", "benefit", "pre_existing_indicator", "visa_type_description", 
+         "relation", "length_of_stay")
 
-for(i in var){
-  a<-Variables_summary%>%group_by_(i,"admission_year")%>%summarise(grossclaim=sum(grossclaim))%>%ungroup()
-  a<-a%>%arrange(admission_year)
-  a<-pivot_wider(a,id_cols = i, names_from = "admission_year",values_from = "grossclaim" ,values_fill = 0)
-  colnames(a)[2:6]<- paste0("gross_claim_",colnames(a)[2:6])
-  a$`gross_claim_2019`<-prettyNum(a$`gross_claim_2019`, big.mark = ',')
-  a$`gross_claim_2020`<-prettyNum(a$`gross_claim_2020`, big.mark = ',')
-  a$`gross_claim_2021`<-prettyNum(a$`gross_claim_2021`, big.mark = ',')
-  a$`gross_claim_2022`<-prettyNum(a$`gross_claim_2022`, big.mark = ',')
-  a$`gross_claim_2023`<-prettyNum(a$`gross_claim_2023`, big.mark = ',')
-  print(knitr::kable(a)%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey"))
+for (i in var) {
+  # Group data by variable `i` and admission year, then calculate total gross claims
+  a <- Variables_summary %>% 
+       group_by_(i, "admission_year") %>% 
+       summarise(grossclaim = sum(grossclaim)) %>% 
+       ungroup() %>%
+       arrange(admission_year)
+  
+  # Reshape data to have years as columns and fill missing values with 0
+  a <- pivot_wider(a, id_cols = i, names_from = "admission_year", values_from = "grossclaim", values_fill = 0)
+  
+  # Rename columns for readability
+  colnames(a)[2:6] <- paste0("gross_claim_", colnames(a)[2:6])
+  
+  # Format claim counts for easy readability
+  for (year in 2019:2023) {
+    a[[paste0("gross_claim_", year)]] <- prettyNum(a[[paste0("gross_claim_", year)]], big.mark = ',')
+  }
+  
+  # Display formatted table with custom styling
+  print(knitr::kable(a) %>% 
+          kable_classic_2(full_width = FALSE, html_font = "Cambria") %>% 
+          kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"), 
+                        position = "left", font_size = 12, fixed_thead = TRUE) %>% 
+          column_spec(1, bold = TRUE, border_right = TRUE, color = "black", background = "lightgrey"))
 }
+```
+## Visualisations:
+
+```{r Gross Claim Analysis Visualisations, warning=FALSE, message=FALSE, echo=TRUE, results='asis'}
 
 ### Histogram of Gross Claim, 2019-2023
 
@@ -317,36 +377,49 @@ Variables_summary%>%group_by_("benefit", "admission_year", "age")%>%summarise(gr
 Variables_summary%>%group_by_("length_of_stay", "admission_year", "categ")%>%summarise(grossclaim=sum(grossclaim))%>%arrange(admission_year)%>%ggplot(aes(x=length_of_stay,y=grossclaim,color=admission_year))+geom_point()+facet_wrap("admission_year", scales = "free_y")+labs(title = "Gross Claim by Length of Stay, 2019-2023", color = "Admission Year")+geom_smooth()
 
 ```
+## Summary
+The EDA provides a comprehensive view of claim patterns over time. The visualisations and analyses of gross claim distribution by demographics and categories (such as inpatient vs. outpatient) allow for detailed insights. These findings help identify trends and outliers, guiding strategic decision-making and resource allocation within the organisation.
 
-### Claim Count Analysis
+# 7. Claim Count Analysis
 
-##### Each table in the Claim Count Analysis is the Claim Count per Predictor Variable (where applicable) per year (2019-2023)
+This section provides a detailed analysis of claim counts across different variables and demographics. Using grouped data by admission_year, we summarise claim counts for variables such as gender, age, and pre-existing conditions. We visualise the distribution of claim counts with histograms and scatter plots.
 
 ```{r Claim Count Analysis, echo=TRUE, warning=FALSE, message=FALSE, results='asis'}
-
-# Claim Count
-
+# Claim Count Analysis
 for(i in var){
-  b<-Variables_summary%>%group_by_(i,"admission_year")%>%summarise(claimcount=sum(claimcount))
-  b<- b%>%arrange(admission_year)
-  b<-pivot_wider(b,id_cols = i, names_from = "admission_year",values_from = "claimcount" ,values_fill = 0)
-  colnames(b)[2:6]<- paste0("claim_count_",colnames(b)[2:6])
-  b$claim_count_2019<-prettyNum(b$claim_count_2019, big.mark = ',')
-  b$claim_count_2020<-prettyNum(b$claim_count_2020, big.mark = ',')
-  b$claim_count_2021<-prettyNum(b$claim_count_2021, big.mark = ',')
-  b$claim_count_2022<-prettyNum(b$claim_count_2022, big.mark = ',')
-  b$claim_count_2023<-prettyNum(b$claim_count_2023, big.mark = ',')
-  print(knitr::kable(b)%>%kable_classic_2(full_width=F, html_font = "Cambria")%>%kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T)%>%column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey"))
+  # Group data by variable `i` and admission year, then sum the claim counts
+  b <- Variables_summary %>% 
+       group_by_(i, "admission_year") %>% 
+       summarise(claimcount = sum(claimcount)) %>% 
+       arrange(admission_year)
+  
+  # Reshape data for readability, filling missing values with 0
+  b <- pivot_wider(b, id_cols = i, names_from = "admission_year", values_from = "claimcount", values_fill = 0)
+  
+  # Rename columns for clarity
+  colnames(b)[2:6] <- paste0("claim_count_", colnames(b)[2:6])
+  
+  # Format claim counts with comma separators for readability
+  b$claim_count_2019 <- prettyNum(b$claim_count_2019, big.mark = ',')
+  b$claim_count_2020 <- prettyNum(b$claim_count_2020, big.mark = ',')
+  b$claim_count_2021 <- prettyNum(b$claim_count_2021, big.mark = ',')
+  b$claim_count_2022 <- prettyNum(b$claim_count_2022, big.mark = ',')
+  b$claim_count_2023 <- prettyNum(b$claim_count_2023, big.mark = ',')
+  
+  # Display the table with customized styling
+  print(knitr::kable(b) %>% 
+          kable_classic_2(full_width = F, html_font = "Cambria") %>% 
+          kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed"), position = "left", font_size = 12, fixed_thead = T) %>% 
+          column_spec(1, bold = T, border_right = T, color = "black", background = "lightgrey"))
 }
-
-Variables_summary%>%ggplot(aes(x=claimcount,fill=gender))+geom_histogram(alpha=0.5)+scale_y_log10()+labs(x = "Claim Count", title = "Claim Count by Gender, 2019-2023")+scale_fill_discrete(name = "Gender")+facet_wrap("admission_year", scales = "free_y")
-
-Variables_summary%>%group_by_("pre_existing_indicator", "admission_year", "age")%>%summarise(claimcount=sum(claimcount))%>%ggplot(aes(x=age, y=claimcount, color=pre_existing_indicator, fill=pre_existing_indicator))+geom_point()+geom_smooth()+labs(x = "Age", y = "Claim Count", title = "Claim Count and Pre-Existing Indicator by Age, 2019-2023")+facet_wrap("admission_year", scales = "free_y")
 ```
+# 8. Visualisations II
 
-### Severity of Claims Analysis
+The analysis includes various visualisations created with ggplot2:
 
-##### Each table in the Severity Analysis is the Severity of the Claims per Predictor Variable per year (2019-2023)
+- Gross Claim Distribution: Gross claims per variable (e.g., nationality, gender) across years.
+- Severity of Claims Analysis: Severity of claims by demographic variables like age and pre-existing conditions.
+- Trend Analysis: Severity of claims over time segmented by admission year and provider network.
 
 ```{r Severity Analysis, echo=TRUE, warning=FALSE, results='asis', message=FALSE}
 
@@ -415,10 +488,13 @@ Variables_summary%>%group_by_("benefit", "admission_year", "age")%>%summarise(se
 
 Variables_summary%>%group_by_("relation", "admission_year", "age")%>%summarise(severity=sum(grossclaim/sum(claimcount)))%>%ggplot(aes(x=age, y=severity, color=relation, fill=relation))+geom_point(alpha=0.5)+geom_smooth()+labs(x = "Age", y = "Severity", title = "Severity by Relation and Age, 2019-2023")+facet_wrap("admission_year")
 ```
+# 9. Predictive Modelling
 
-## Modelling
+A decision tree model is developed to predict claim severity using factors such as admission year, network, age, and gender. Modelling steps include:
 
-#### Decision Tree Model
+1. Splitting the data into training and testing sets with an 80/20 ratio.
+2. Training a decision tree model with rpart, using a complexity parameter (cp) of 0.001.
+3. Visualising the model to identify critical predictors for claim severity.
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 
@@ -437,3 +513,10 @@ complex_model<-rpart(severity ~ `admission_year` + `type` + `network` + `underwr
 options(repr.plot.width = 40, repr.plot.height = 10)
 rpart.plot(complex_model, type = 1, digits = 5, fallen.leaves = TRUE)
 ```
+# 8. Future Enhancements
+
+Future directions for this analysis include:
+
+1. Expanded Modelling: Experimenting with alternative models like random forests and logistic regression.
+2. Advanced Cleaning: Incorporating additional validation techniques to enhance model accuracy.
+3. Real-Time Reporting: Implementing a more advanced Shiny dashboard to support dynamic and real-time data analytics.
