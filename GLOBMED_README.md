@@ -6,6 +6,8 @@ output:
   html_document:
     df_print: paged
 ---
+**Disclosure**: This repository contains code and explanatory materials for the GLOBMED Closed Claims Analysis project. In accordance with Gulf Insurance Group by-laws, I am sharing only the code and its explanations. Due to compliance requirements, specific data and certain proprietary details are not included.
+
 # 1. Project Overview
 
 This project analyses GLOBMED closed claims data from 2019 to 2023 to identify patterns in claim severity, frequency, and various demographic and medical variables. Using statistical techniques, this project provides strategic insights to enhance risk assessment and resource management in the medical insurance domain.
